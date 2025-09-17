@@ -1,0 +1,4 @@
+sampleId,sampleName,retentionTime,area,height,concentration,peakName,column,mobile_phase,flow_rate,detection_wavelength,analysisDate
+TEST001,Aspirin Tablet Analysis,5.234,1234567,89012,99.2,Aspirin,C18 250mm x 4.6mm,Water:Methanol (60:40),1.0,230,2024-02-10
+TEST002,Paracetamol Standard,3.567,2345678,123456,98.8,Paracetamol,C18 150mm x 4.6mm,Phosphate Buffer:ACN,1.2,254,2024-02-11
+TEST003,Antibiotic Residue,8.901,456789,34567,0.05,Tetracycline,C18 250mm x 4.6mm,TFA:Acetonitrile,0.8,280,2024-02-12

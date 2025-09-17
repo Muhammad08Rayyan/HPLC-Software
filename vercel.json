@@ -1,0 +1,31 @@
+{
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 60
+    },
+    "scripts/generate_lcm.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "scripts/generate_lcm.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/lcm/generate",
+      "destination": "/api/lcm/generate"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "JWT_SECRET": "@jwt_secret"
+  }
+}

@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HPLC Report Generator
+
+A comprehensive HPLC (High-Performance Liquid Chromatography) report generation system with .LCM file export capabilities for pharmaceutical, chemical, and research laboratories.
+
+## Features
+
+- **Custom HPLC Report Generation**: Generate PDF reports with configurable data fields
+- **LCM File Export**: Generate .LCM files compatible with Shimadzu LabSolutions
+- **Role-Based Access Control**: Admin, Analyst, and Viewer roles
+- **Real-Time Preview**: Live preview of chromatogram data and reports
+- **Batch Data Upload**: Support for CSV and Excel file uploads
+- **Audit Trail**: Complete logging of all system activities
+- **Admin Configuration**: Customizable field labels and report templates
+
+## Technology Stack
+
+- **Frontend**: Next.js 15, React 19, TailwindCSS
+- **Backend**: Next.js API Routes
+- **Database**: MongoDB with Mongoose
+- **Authentication**: JWT-based with role management
+- **File Generation**: jsPDF for reports, Python for LCM files
+- **Charts**: Recharts for data visualization
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- Python 3.9+
+- MongoDB database
+
+### Installation
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables in `.env.local`:
+```
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_secret_key
+JWT_SECRET=your_jwt_secret
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Create initial admin user:
+```bash
+node scripts/setup-admin.js
+```
 
-## Learn More
+5. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Default Login Credentials
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After running the setup script:
 
-## Deploy on Vercel
+**Admin User:**
+- Email: admin@hplc.com
+- Password: admin123
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Sample Analyst:**
+- Email: analyst@hplc.com
+- Password: analyst123
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+⚠️ **Important**: Change these default passwords after first login!
+
+## 🎬 Demo Data
+
+The system comes pre-loaded with **5 realistic HPLC samples** for immediate exploration:
+
+1. **CAF001** - Caffeine Standard (3 peaks) ✅ Reports Generated
+2. **PHARM002** - Ibuprofen Tablet (2 peaks) ✅ PDF Report
+3. **ENV003** - Pesticide Analysis (4 peaks)
+4. **FOOD004** - Vitamin C Analysis (2 peaks) ✅ Complete
+5. **PROT005** - Protein Purity (3 peaks)
+
+**Sample CSV files** for testing uploads:
+- `sample-data/sample-hplc-data.csv`
+- `sample-data/pesticide-analysis.csv`
+
+📖 **See [DEMO-GUIDE.md](./DEMO-GUIDE.md) for complete walkthrough!**
+
+## User Roles
+
+| Role | Permissions |
+|------|------------|
+| **Admin** | Full system access, user management, configuration |
+| **Analyst** | Data input, report generation, LCM export |
+| **Viewer** | Read-only access to reports and data |
+
+## Core Functionality
+
+### Data Input
+- Manual entry form for HPLC data
+- Batch upload via CSV/Excel files
+- Peak data (retention time, area, height, concentration)
+- Instrument settings and system suitability parameters
+
+### Report Generation
+- PDF reports with customizable templates
+- Include/exclude fields based on admin configuration
+- System suitability parameters
+- Peak tables and charts
+
+### LCM File Export
+- Generate .LCM files compatible with Shimadzu LabSolutions
+- Binary format with proper metadata
+- Simulated chromatogram data points
+- Peak list and instrument settings
+
+### Administration
+- User management (create, view users)
+- Report configuration (field labels, templates)
+- Peak count settings (default, min, max)
+- Enable/disable specific data fields
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push code to GitHub
+2. Connect repository to Vercel
+3. Set environment variables in Vercel dashboard
+4. Deploy automatically
+
+## Security Features
+
+- JWT-based authentication
+- Role-based access control
+- Password hashing with bcrypt
+- Input validation and sanitization
+- Audit trail logging
+- Secure cookie handling
+
+## Compliance
+
+- **21 CFR Part 11 Ready**: Audit trails and data integrity
+- **LabSolutions Compatible**: Validated .LCM file format
+- **Data Security**: Encrypted storage and transmission
