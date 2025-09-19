@@ -4,6 +4,8 @@ import HPLCData from '@/models/HPLCData';
 import User from '@/models/User';
 import { getUser } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();

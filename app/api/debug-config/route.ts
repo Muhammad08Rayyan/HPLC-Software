@@ -4,6 +4,8 @@ import Configuration from '@/models/Configuration';
 import Department from '@/models/Department';
 import { getUser } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
