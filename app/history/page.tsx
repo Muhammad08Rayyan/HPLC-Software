@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { History, Search, User, Clock, Activity } from 'lucide-react';
+import { History, User, Clock, Activity } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface AuditLog {
@@ -13,7 +13,7 @@ interface AuditLog {
   userName: string;
   action: string;
   sampleId?: string;
-  details: any;
+  details: Record<string, unknown>;
   timestamp: string;
   ipAddress?: string;
 }
@@ -21,12 +21,32 @@ interface AuditLog {
 export default function HistoryPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterAction, setFilterAction] = useState('all');
+  const router = useRouter();
 
   useEffect(() => {
-    loadLogs();
-  }, []);
+    // Check user role and redirect if not admin
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data?.user) {
+          router.push('/login');
+          return;
+        }
+        if (data.user.role !== 'admin') {
+          // Redirect non-admin users to their appropriate page
+          if (data.user.role === 'analyst') {
+            router.push('/data-input');
+          } else if (data.user.role === 'viewer') {
+            router.push('/reports');
+          }
+          return;
+        }
+        loadLogs();
+      })
+      .catch(() => {
+        router.push('/login');
+      });
+  }, [router]);
 
   const loadLogs = async () => {
     try {
@@ -76,16 +96,6 @@ export default function HistoryPage() {
     return action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const filteredLogs = logs.filter(log => {
-    const matchesSearch =
-      log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.sampleId && log.sampleId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter = filterAction === 'all' || log.action === filterAction;
-
-    return matchesSearch && matchesFilter;
-  });
 
   if (loading) {
     return (
@@ -113,39 +123,13 @@ export default function HistoryPage() {
                 System Activity Log
               </CardTitle>
               <CardDescription>
-                Complete audit trail of all system activities
+                Recent system activities (showing 10 most recent actions)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search by user, sample, or action..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <select
-                  value={filterAction}
-                  onChange={(e) => setFilterAction(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 bg-white"
-                >
-                  <option value="all">All Actions</option>
-                  <option value="login">Login</option>
-                  <option value="logout">Logout</option>
-                  <option value="data_uploaded">Data Uploaded</option>
-                  <option value="report_generated">Report Generated</option>
-                  <option value="lcm_generated">LCM Generated</option>
-                  <option value="config_changed">Config Changed</option>
-                </select>
-              </div>
-
               {/* Activity Log */}
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {filteredLogs.map((log) => (
+                {logs.map((log) => (
                   <div key={log._id} className="flex items-start space-x-4 p-4 bg-white border rounded-lg">
                     <div className={`p-2 rounded-full ${getActionColor(log.action)}`}>
                       {getActionIcon(log.action)}
@@ -181,39 +165,11 @@ export default function HistoryPage() {
                   </div>
                 ))}
 
-                {filteredLogs.length === 0 && (
+                {logs.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No activity found matching your criteria
+                    No recent activity found
                   </div>
                 )}
-              </div>
-
-              {/* Summary Stats */}
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {logs.filter(l => l.action === 'login').length}
-                  </div>
-                  <div className="text-sm text-gray-600">Logins</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {logs.filter(l => l.action === 'data_uploaded').length}
-                  </div>
-                  <div className="text-sm text-gray-600">Data Uploads</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {logs.filter(l => l.action === 'report_generated').length}
-                  </div>
-                  <div className="text-sm text-gray-600">Reports</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {logs.filter(l => l.action === 'lcm_generated').length}
-                  </div>
-                  <div className="text-sm text-gray-600">LCM Files</div>
-                </div>
               </div>
             </CardContent>
           </Card>

@@ -12,33 +12,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const skip = (page - 1) * limit;
-
-    let query: any = {};
+    const query: { userId?: string } = {};
     if (user.role !== 'admin') {
-      query.userId = user._id;
+      query.userId = String(user._id);
     }
 
+    // Get the 10 most recent logs
     const logs = await AuditLog.find(query)
       .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limit);
+      .limit(10);
 
-    const total = await AuditLog.countDocuments(query);
+    // Clean up older logs (keep only the 10 most recent)
+    const totalCount = await AuditLog.countDocuments(query);
+    if (totalCount > 10) {
+      // Get the 10th most recent log's timestamp
+      const tenthLog = await AuditLog.find(query)
+        .sort({ timestamp: -1 })
+        .skip(9)
+        .limit(1)
+        .select('timestamp');
+      
+      if (tenthLog.length > 0) {
+        // Delete all logs older than the 10th most recent
+        await AuditLog.deleteMany({
+          ...query,
+          timestamp: { $lt: tenthLog[0].timestamp }
+        });
+      }
+    }
 
     return NextResponse.json({
       logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      total: logs.length
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

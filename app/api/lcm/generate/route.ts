@@ -6,6 +6,23 @@ import HPLCData from '@/models/HPLCData';
 import Configuration from '@/models/Configuration';
 import AuditLog from '@/models/AuditLog';
 import { getUser } from '@/lib/auth';
+import { calculatePeakCharacteristics } from '@/lib/hplc-calculations';
+
+// Calculate concentration based on peak area (same logic as PDF generation)
+function calculateConcentration(peak: any, allPeaks: any[]): number {
+  if (peak.concentration !== undefined && peak.concentration !== null) {
+    return peak.concentration;
+  }
+
+  // Calculate concentration based on area percentage and assumed total concentration
+  const totalArea = allPeaks.reduce((sum: number, p: any) => sum + (p.area || 0), 0);
+  if (totalArea === 0) return 0;
+
+  const areaPercentage = (peak.area || 0) / totalArea;
+  // Use a reasonable default concentration calculation
+  // In practice, this would use calibration curve or response factor
+  return areaPercentage * 1.0; // Assuming 1.0 mg/L total
+}
 
 // JavaScript implementation of LCM file generation
 function generateLCMFile(data: any): Buffer {
@@ -64,9 +81,10 @@ function generateLCMFile(data: any): Buffer {
     height.writeDoubleLE(peak.height || 0, 0);
     buffers.push(height);
 
-    // Concentration (4 bytes float)
+    // Concentration (4 bytes float) - use calculated concentration
     const conc = Buffer.alloc(4);
-    conc.writeFloatLE(peak.concentration || 0, 0);
+    const calculatedConcentration = calculateConcentration(peak, data.peaks);
+    conc.writeFloatLE(calculatedConcentration, 0);
     buffers.push(conc);
 
     // Peak name (32 bytes)
@@ -152,17 +170,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sample not found' }, { status: 404 });
     }
 
-    const config = await Configuration.findOne({
+    // Use stored department configuration snapshot instead of current user's config
+    const config = hplcData.departmentConfig || await Configuration.findOne({
       $or: [{ userId: user._id }, { department: user.department }]
     });
 
-    // Prepare data for Python script
+    // Enhance peaks with calculated characteristics if not already present
+    const enhancedPeaks = hplcData.peaks.map((peak: any) => {
+      if ((!peak.uspPlateCount || !peak.uspTailing) && peak.area && peak.height) {
+        const characteristics = calculatePeakCharacteristics({
+          retentionTime: peak.retentionTime,
+          area: peak.area,
+          height: peak.height
+        });
+        return {
+          ...peak,
+          uspPlateCount: peak.uspPlateCount || characteristics.uspPlateCount,
+          uspTailing: peak.uspTailing || characteristics.uspTailing
+        };
+      }
+      return peak;
+    });
+
+    // Prepare data for LCM file with enhanced peak data
     const pythonData = {
       sampleId: hplcData.sampleId,
       sampleName: hplcData.sampleName,
-      peaks: hplcData.peaks,
+      peaks: enhancedPeaks,
       instrumentSettings: hplcData.instrumentSettings,
-      analysisDate: hplcData.analysisDate.toISOString()
+      analysisDate: hplcData.analysisDate.toISOString(),
+      departmentConfig: config // Include department configuration in LCM file
     };
 
     // Create temporary file for Python input

@@ -14,8 +14,9 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { FileText, Download, Eye, Search } from 'lucide-react';
+import { FileText, Download, Search } from 'lucide-react';
 import { downloadFile } from '@/lib/utils';
+ 
 
 interface HPLCData {
   _id: string;
@@ -27,7 +28,12 @@ interface HPLCData {
     area: number;
     height: number;
     concentration?: number;
+    concentrationUnit?: string;
     peakName?: string;
+    percentArea?: number;
+    uspPlateCount?: number;
+    uspTailing?: number;
+    mark?: string;
   }>;
   createdAt: string;
   reportGenerated: boolean;
@@ -40,8 +46,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [configLoading, setConfigLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSample, setSelectedSample] = useState<HPLCData | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
+  
 
   useEffect(() => {
     loadData();
@@ -53,6 +59,7 @@ export default function ReportsPage() {
       const response = await fetch('/api/config');
       if (response.ok) {
         const configData = await response.json();
+        console.log('Loaded config in reports:', configData); // Debug log
         setConfig(configData);
       }
     } catch (error) {
@@ -109,12 +116,6 @@ export default function ReportsPage() {
     item.analystName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const chartData = selectedSample?.peaks.map((peak, index) => ({
-    peak: `Peak ${index + 1}`,
-    retentionTime: peak.retentionTime,
-    area: peak.area,
-    height: peak.height
-  })) || [];
 
   if (loading) {
     return (
@@ -135,9 +136,9 @@ export default function ReportsPage() {
         <div className="px-4 py-6 sm:px-0">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Reports & Export</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-4xl mx-auto">
             {/* Sample List */}
-            <div className="lg:col-span-2">
+            <div>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -167,10 +168,7 @@ export default function ReportsPage() {
                     {filteredData.map((sample) => (
                       <div
                         key={sample._id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedSample?._id === sample._id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => setSelectedSample(sample)}
+                        className="p-4 border rounded-lg"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
@@ -183,6 +181,7 @@ export default function ReportsPage() {
                             </p>
                           </div>
                           <div className="flex items-center space-x-2">
+                            
                             <Button
                               size="sm"
                               onClick={(e) => {
@@ -232,230 +231,11 @@ export default function ReportsPage() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Preview Panel */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Eye className="h-5 w-5 mr-2" />
-                    Sample Preview
-                  </CardTitle>
-                  <CardDescription>
-                    Peak data visualization
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {selectedSample ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium">{selectedSample.sampleName}</h3>
-                        <p className="text-sm text-gray-600">{selectedSample.sampleId}</p>
-                        <p className="text-xs text-gray-500">
-                          Analyzed by {selectedSample.analystName}
-                        </p>
-                      </div>
-
-                      {/* Chromatogram Preview */}
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Chromatogram</h4>
-                        <div className="border rounded bg-white p-3">
-                          <div className="text-xs text-gray-600 mb-1">mV</div>
-                          <div className="relative h-32 border">
-                            {/* Background grid */}
-                            <div className="absolute inset-0 opacity-20">
-                              <svg width="100%" height="100%">
-                                {/* Horizontal grid lines */}
-                                {[1, 2, 3].map(i => (
-                                  <line
-                                    key={`h-${i}`}
-                                    x1="0"
-                                    y1={`${(i * 100) / 4}%`}
-                                    x2="100%"
-                                    y2={`${(i * 100) / 4}%`}
-                                    stroke="#ccc"
-                                    strokeWidth="0.5"
-                                  />
-                                ))}
-                                {/* Vertical grid lines */}
-                                {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                  <line
-                                    key={`v-${i}`}
-                                    x1={`${(i * 100) / 8}%`}
-                                    y1="0"
-                                    x2={`${(i * 100) / 8}%`}
-                                    y2="100%"
-                                    stroke="#ccc"
-                                    strokeWidth="0.5"
-                                  />
-                                ))}
-                              </svg>
-                            </div>
-
-                            {/* Chromatogram line and peaks */}
-                            <svg width="100%" height="100%" className="absolute inset-0">
-                              {/* Baseline */}
-                              <line x1="0" y1="95%" x2="100%" y2="95%" stroke="black" strokeWidth="1" />
-
-                              {/* Draw peaks */}
-                              {selectedSample.peaks.map((peak, index) => {
-                                const maxTime = 8;
-                                const maxHeight = Math.max(...selectedSample.peaks.map(p => p.height));
-                                const x = (peak.retentionTime / maxTime) * 100;
-                                const height = Math.min((peak.height / maxHeight) * 80, 80);
-
-                                // Generate Gaussian peak points
-                                const points = [];
-                                const width = 3; // Peak width percentage
-                                for (let i = -width; i <= width; i += 0.2) {
-                                  const px = x + i;
-                                  const gaussian = Math.exp(-(i * i) / (2 * (width/3) * (width/3)));
-                                  const py = 95 - (height * gaussian);
-                                  points.push(`${px},${py}`);
-                                }
-
-                                return (
-                                  <g key={index}>
-                                    <polyline
-                                      points={points.join(' ')}
-                                      fill="none"
-                                      stroke="black"
-                                      strokeWidth="1.5"
-                                    />
-                                    {/* Peak label */}
-                                    <text
-                                      x={`${x}%`}
-                                      y={95 - height - 5}
-                                      textAnchor="middle"
-                                      fontSize="8"
-                                      fill="black"
-                                    >
-                                      {peak.retentionTime.toFixed(3)}
-                                    </text>
-                                  </g>
-                                );
-                              })}
-                            </svg>
-
-                            {/* Axis labels */}
-                            <div className="absolute -bottom-5 left-0 right-0 flex justify-between text-xs text-gray-600">
-                              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                                <span key={i}>{i}</span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="text-xs text-gray-600 text-center mt-1">min</div>
-                        </div>
-                      </div>
-
-                      {/* Peak Table */}
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Peak Table</h4>
-                        <div className="border rounded bg-white">
-                          <div className="text-xs p-2 border-b bg-gray-50 font-medium">
-                            Detector A {(selectedSample as any)?.instrumentSettings?.detection_wavelength || 254}nm
-                          </div>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="border-b">
-                                  <th className="text-center py-1 px-1">Peak#</th>
-                                  <th className="text-center py-1 px-1">Ret. Time</th>
-                                  {config?.fieldConfig?.enableArea !== false && (
-                                    <th className="text-center py-1 px-1">{config?.fieldConfig?.areaLabel || 'Area'}</th>
-                                  )}
-                                  {config?.fieldConfig?.enableHeight !== false && (
-                                    <th className="text-center py-1 px-1">{config?.fieldConfig?.heightLabel || 'Height'}</th>
-                                  )}
-                                  {config?.fieldConfig?.enableConcentration !== false && (
-                                    <>
-                                      <th className="text-center py-1 px-1">{config?.fieldConfig?.concentrationLabel || 'Conc.'}</th>
-                                      <th className="text-center py-1 px-1">Unit</th>
-                                    </>
-                                  )}
-                                  <th className="text-center py-1 px-1">Name</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {selectedSample.peaks.map((peak, index) => (
-                                  <tr key={index} className="border-b">
-                                    <td className="text-center py-1 px-1">{index + 1}</td>
-                                    <td className="text-center py-1 px-1">{peak.retentionTime.toFixed(3)}</td>
-                                    {config?.fieldConfig?.enableArea !== false && (
-                                      <td className="text-right py-1 px-1">{peak.area.toLocaleString()}</td>
-                                    )}
-                                    {config?.fieldConfig?.enableHeight !== false && (
-                                      <td className="text-right py-1 px-1">{peak.height.toLocaleString()}</td>
-                                    )}
-                                    {config?.fieldConfig?.enableConcentration !== false && (
-                                      <>
-                                        <td className="text-right py-1 px-1">{peak.concentration?.toFixed(3) || '0.000'}</td>
-                                        <td className="text-center py-1 px-1">mg/L</td>
-                                      </>
-                                    )}
-                                    <td className="text-left py-1 px-1">{peak.peakName || ''}</td>
-                                  </tr>
-                                ))}
-                                <tr className="border-b font-medium">
-                                  <td className="text-center py-1 px-1">Total</td>
-                                  <td className="text-center py-1 px-1"></td>
-                                  {config?.fieldConfig?.enableArea !== false && (
-                                    <td className="text-right py-1 px-1">
-                                      {selectedSample.peaks.reduce((sum, peak) => sum + peak.area, 0).toLocaleString()}
-                                    </td>
-                                  )}
-                                  {config?.fieldConfig?.enableHeight !== false && (
-                                    <td className="text-right py-1 px-1">
-                                      {selectedSample.peaks.reduce((sum, peak) => sum + peak.height, 0).toLocaleString()}
-                                    </td>
-                                  )}
-                                  {config?.fieldConfig?.enableConcentration !== false && (
-                                    <>
-                                      <td className="text-center py-1 px-1"></td>
-                                      <td className="text-center py-1 px-1"></td>
-                                    </>
-                                  )}
-                                  <td className="text-center py-1 px-1"></td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => generateReport(selectedSample.sampleId, 'pdf')}
-                          disabled={generating === selectedSample.sampleId}
-                          className="flex-1"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          PDF
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => generateReport(selectedSample.sampleId, 'lcm')}
-                          disabled={generating === selectedSample.sampleId}
-                          className="flex-1"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          LCM
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      Select a sample to preview
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </div>
+
+      
     </div>
   );
 }

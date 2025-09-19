@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import {
-  FlaskConical,
   Settings,
   Upload,
   FileText,
@@ -50,19 +50,53 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
-              <FlaskConical className="h-8 w-8 text-blue-600" />
+              <Image
+                src="/logo.jpg"
+                alt="HPLC Reports Logo"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain rounded"
+              />
               <span className="text-xl font-bold text-gray-900">HPLC Reports</span>
             </Link>
 
             <div className="hidden md:flex space-x-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
+              {user.role === 'admin' && (
+                <>
+                  <Link href="/dashboard">
+                    <Button variant="ghost" size="sm">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="/data-input">
+                    <Button variant="ghost" size="sm">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Data Input
+                    </Button>
+                  </Link>
+                  <Link href="/reports">
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Reports
+                    </Button>
+                  </Link>
+                  <Link href="/history">
+                    <Button variant="ghost" size="sm">
+                      <History className="h-4 w-4 mr-2" />
+                      History
+                    </Button>
+                  </Link>
+                  <Link href="/admin">
+                    <Button variant="ghost" size="sm">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
+                </>
+              )}
 
-              {(user.role === 'admin' || user.role === 'analyst') && (
+              {user.role === 'analyst' && (
                 <>
                   <Link href="/data-input">
                     <Button variant="ghost" size="sm">
@@ -79,18 +113,12 @@ export default function Navigation() {
                 </>
               )}
 
-              <Link href="/history">
-                <Button variant="ghost" size="sm">
-                  <History className="h-4 w-4 mr-2" />
-                  History
-                </Button>
-              </Link>
-
-              {user.role === 'admin' && (
-                <Link href="/admin">
+              {/* Reports page accessible by viewers */}
+              {user.role === 'viewer' && (
+                <Link href="/reports">
                   <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Admin
+                    <Download className="h-4 w-4 mr-2" />
+                    Reports
                   </Button>
                 </Link>
               )}

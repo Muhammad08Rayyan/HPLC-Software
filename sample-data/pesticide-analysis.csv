@@ -1,6 +1,0 @@
-sampleId,sampleName,retentionTime,area,height,concentration,peakName,column,mobile_phase,flow_rate,detection_wavelength,analysisDate
-PEST001,Soil Sample A,12.34,567890,45678,2.1,Atrazine,C18 250mm x 4.6mm,Water:ACN Gradient,0.8,230,2024-02-13
-PEST001,Soil Sample A,15.67,234567,23456,1.8,Simazine,C18 250mm x 4.6mm,Water:ACN Gradient,0.8,230,2024-02-13
-PEST001,Soil Sample A,18.90,123456,12345,0.9,Metolachlor,C18 250mm x 4.6mm,Water:ACN Gradient,0.8,230,2024-02-13
-PEST002,Water Sample B,11.23,678901,56789,3.2,Atrazine,C18 250mm x 4.6mm,Water:ACN Gradient,0.8,230,2024-02-14
-PEST002,Water Sample B,14.56,345678,34567,2.5,Simazine,C18 250mm x 4.6mm,Water:ACN Gradient,0.8,230,2024-02-14

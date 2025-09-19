@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IAuditLog extends Document {
   userId: string;
   userName: string;
-  action: 'report_generated' | 'lcm_generated' | 'data_uploaded' | 'config_changed' | 'login' | 'logout';
+  action: 'report_generated' | 'lcm_generated' | 'data_uploaded' | 'config_changed' | 'login' | 'logout' | 'department_created' | 'department_updated' | 'department_deleted';
   sampleId?: string;
   details: any;
   timestamp: Date;
@@ -21,7 +21,7 @@ const AuditLogSchema = new Schema<IAuditLog>({
   },
   action: {
     type: String,
-    enum: ['report_generated', 'lcm_generated', 'data_uploaded', 'config_changed', 'login', 'logout'],
+    enum: ['report_generated', 'lcm_generated', 'data_uploaded', 'config_changed', 'login', 'logout', 'department_created', 'department_updated', 'department_deleted'],
     required: true
   },
   sampleId: {

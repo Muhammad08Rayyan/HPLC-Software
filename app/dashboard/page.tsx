@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import {
-  FlaskConical,
   FileText,
   Download,
   TrendingUp,
@@ -45,16 +45,42 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/dashboard/stats')
-      .then(res => res.json())
+    // Check user role and redirect if not admin
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
       .then(data => {
-        setStats(data);
-        setLoading(false);
+        if (!data?.user) {
+          router.push('/login');
+          return;
+        }
+        if (data.user.role !== 'admin') {
+          // Redirect non-admin users to their appropriate page
+          if (data.user.role === 'analyst') {
+            router.push('/data-input');
+          } else if (data.user.role === 'viewer') {
+            router.push('/reports');
+          }
+          return;
+        }
+        setUser(data.user);
+
+        // Load dashboard stats only for admin
+        fetch('/api/dashboard/stats')
+          .then(res => res.json())
+          .then(data => {
+            setStats(data);
+            setLoading(false);
+          })
+          .catch(() => setLoading(false));
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        router.push('/login');
+      });
+  }, [router]);
 
   if (loading) {
     return (
@@ -80,7 +106,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Samples</CardTitle>
-                <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.totalSamples || 0}</div>

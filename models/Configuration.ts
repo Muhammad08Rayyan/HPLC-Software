@@ -21,6 +21,7 @@ export interface IConfiguration extends Document {
     wavelength?: number;
     flowRate?: number;
     temperature?: number;
+    defaultUnits?: string;
   };
   reportTemplate: {
     title: string;
@@ -57,7 +58,8 @@ const ConfigurationSchema = new Schema<IConfiguration>({
   detectorSettings: {
     wavelength: { type: Number },
     flowRate: { type: Number },
-    temperature: { type: Number }
+    temperature: { type: Number },
+    defaultUnits: { type: String, default: 'mV' }
   },
   reportTemplate: {
     title: { type: String, default: 'HPLC Analysis Report' },

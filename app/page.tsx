@@ -7,13 +7,26 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in and redirect based on role
     fetch('/api/auth/me')
       .then(res => {
         if (res.ok) {
-          router.push('/dashboard');
+          return res.json();
         } else {
           router.push('/login');
+          return null;
+        }
+      })
+      .then(data => {
+        if (data?.user) {
+          const role = data.user.role;
+          if (role === 'admin') {
+            router.push('/dashboard');
+          } else if (role === 'analyst') {
+            router.push('/data-input');
+          } else if (role === 'viewer') {
+            router.push('/reports');
+          }
         }
       })
       .catch(() => {

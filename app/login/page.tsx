@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FlaskConical } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -45,7 +45,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <FlaskConical className="mx-auto h-12 w-12 text-blue-600" />
+          <Image
+            src="/logo.jpg"
+            alt="HPLC Report System Logo"
+            width={48}
+            height={48}
+            className="mx-auto h-12 w-12 object-contain rounded-lg"
+          />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             HPLC Report System
           </h2>
